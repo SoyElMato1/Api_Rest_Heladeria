@@ -54,35 +54,36 @@ urlpatterns = [
     #Detalle Boleta
     path('getdetboleta/', getDetalle_Boleta, name='detboletas'),
     path('det_detboleta/<id>', detalle_det_boleta, name='detalle_detboletas'),
-    #Compra
-    path('getcompra/', getCompra, name='compras'),
-    path('det_compra/<id>', detalle_compra, name='detalle_compras'),
     #Transferencia
     path('gettrans/', getTrans, name='transferencias'),
     path('det_dettrans/<id>', detalleTransferencia, name='detalle_transferencias'),
+    #Usuario
+    path('getusuario/', registro_usuario, name='usuarios'),
+    #Carrito
+    # path('create/', CrearCarritoView.as_view(), name='carrito'),
+    path('user/<int:id>', listar_carrito, name='carrito_usuario'),
+    path('add/', agregar_carrito, name='agregar_producto'),
+    path('restar/', eliminar_carritoitem, name='restar_producto'),
+    path('listarcompra/', ListarCompras, name='listar_compra'),
+    path("comprar/created", CrearCompra.as_view(), name="crear_compra"),
     #Bodega
     path('getbodega/', listar_bodega, name='bodegas'),
     path('det_bodega/<id>', detalle_bodega, name='detalle_bodegas'),
     path('createbodega/', CrearProdbodega, name='crear_bodegas'),
     path('bodega/<int:id>', listar_prodbodega.as_view(), name='bodega_producto'),
     path('producto/<int:id>', ListarStockBodegaFilterView.as_view(), name='producto_bodega'),
-    #Factura
-    path('getfactura/', getFactura, name='facturas'),
-    path('det_factura/<id>', detalle_factura, name='detalle_facturas'),
-    #Detalle Factura
-    path('getdetfactura/', getDetalleFactura, name='detfacturas'),
-    path('det_detfactura/<id>', detalle_detFactura, name='detalle_detfacturas'),
-    #Guia Despacho
-    path('getguiadespacho/', getGuiaDespacho, name='guias'),
-    path('det_guiadespacho/<id>', detalle_guiadespacho, name='detalle_guias'),
-    #Usuario
-    path('getusuario/', registro_usuario, name='usuarios'),
-    #Carrito
-    path('create/', CrearCarritoView.as_view(), name='carrito'),
-    path('user/<int:id>', CarritoUsuarioView.as_view(), name='carrito_usuario'),
-    path('add/', AgregarCarritoView.as_view(), name='agregar_producto'),
-    path('restar/', RestarCarritoItemView.as_view(), name='restar_producto'),
-    path('listarcompra/', ListarCompra.as_view(), name='listar_compra'),
-    path("comprar/created", CrearCompra.as_view(), name="crear_compra"),
-
+    #Pedido
+    path('getpedido/', listarPedido, name='pedidos'),
+    path('pefa/<int:id>',listarpedidofactura, name='factura_pedido'),
+    path('update/<int:id>', ActualizarEstadoPedido, name='actualizar_pedido'),
+    #factura
+    path('getfactura/', listarFactura, name='facturas'),
+    path('proveedor/<int:id>', listarFacturaProveedor, name='detalle_facturas'),
+    path('createfactura/', CrearFactura, name='crear_factura'),
+    #Guia de despacho
+    path('getguia/', listarGuia, name='guias'),
+    path('createguia/', CrearGuia, name='crear_guia'),
+    path('guiasucu/<int:id>', listarGuiaSucursal, name='detalle_guias'),
+    #Login
+    path('login/', login, name='login'),
 ]

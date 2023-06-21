@@ -2,9 +2,14 @@ from django.http import JsonResponse
 from .models import *
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
+# from rest_framework.decorators import permission_classes, authentication_classes
+# from rest_framework.permissions import IsAuthenticated
+# from rest_framework.authentication import TokenAuthentication
 from .serializers import *
 from rest_framework import status
 from rest_framework.parsers import JSONParser
+from rest_framework.response import Response
+
 # imports soap
 from spyne.server.django import DjangoApplication
 from spyne.service import ServiceBase
@@ -35,7 +40,7 @@ def getsabor(request):
         return JsonResponse(sabores_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'DELETE'])
 def detalle_sabor(request, id):
     """
     Recupera, actualiza o elimina un sabor.
@@ -46,14 +51,7 @@ def detalle_sabor(request, id):
         return JsonResponse({'message': 'El sabor no existe'}, status=status.HTTP_404_NOT_FOUND) 
     if request.method == 'GET': 
         sabor_serializer = SaborSerializer(sabor) 
-        return JsonResponse(sabor_serializer.data) 
-    elif request.method == 'PUT': 
-        sabor_data = JSONParser().parse(request) 
-        sabor_serializer = SaborSerializer(sabor, data=sabor_data) 
-        if sabor_serializer.is_valid(): 
-            sabor_serializer.save() 
-            return JsonResponse(sabor_serializer.data) 
-        return JsonResponse(sabor_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+        return JsonResponse(sabor_serializer.data)
     elif request.method == 'DELETE': 
         sabor.delete() 
         return JsonResponse({'message': 'Sabor eliminado correctamente!'}, status=status.HTTP_204_NO_CONTENT)
@@ -228,7 +226,7 @@ def getCliente(request):
         cliente_serializer = ClienteSerializer(data=cliente_data)
         if cliente_serializer.is_valid():
             cliente_serializer.save()
-            return JsonResponse(cliente_serializer, status=status.HTTP_201_CREATED)
+            return JsonResponse(cliente_serializer.data, status=status.HTTP_201_CREATED)
         return JsonResponse(cliente_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @csrf_exempt
@@ -400,43 +398,6 @@ def detalle_det_boleta(request, id):
         detalle_boleta.delete()
         return JsonResponse({'message': 'Detalle de la boleta eliminado correctamente!'}, status=status.HTTP_204_NO_CONTENT)
 
-#Compra
-@csrf_exempt
-@api_view(['GET', 'POST'])
-def getCompra(request):
-    if request.method == 'GET':
-        compre = Compra.objects.all()
-        compre_serializer = CompraSerializer(compre, many=True)
-        return JsonResponse(compre_serializer.data, safe=False)
-    elif request.method == 'POST':
-        compre_data = JSONParser().parse(request)
-        compre_serializer = CompraSerializer(data=compre_data)
-        if compre_serializer.is_valid():
-            compre_serializer.save()
-            return JsonResponse(compre_serializer.data, status=status.HTTP_201_CREATED)
-        return JsonResponse(compre_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-@csrf_exempt
-@api_view(['GET', 'PUT', 'DELETE'])
-def detalle_compra(request, id):
-    try:
-        compre = Compra.objects.get(id_compra=id)
-    except Compra.DoesNotExist:
-        return JsonResponse({'message': 'La compra no existe'}, status=status.HTTP_404_NOT_FOUND)
-    if request.method == 'GET':
-        compre_serializer = CompraSerializer(compre)
-        return JsonResponse(compre_serializer.data)
-    elif request.method == 'PUT':
-        compre_data = JSONParser().parse(request)
-        compre_serializer = CompraSerializer(compre, data=compre_data)
-        if compre_serializer.is_valid():
-            compre_serializer.save()
-            return JsonResponse(compre_serializer.data)
-        return JsonResponse(compre_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE':
-        compre.delete()
-        return JsonResponse({'message': 'Compra eliminada correctamente!'}, status=status.HTTP_204_NO_CONTENT)
-
 #Transferencia
 @csrf_exempt
 @api_view(['GET', 'POST'])
@@ -473,117 +434,6 @@ def detalleTransferencia(request, id):
     elif request.method == 'DELETE':
         transferencia.delete()
         return JsonResponse({'message': 'Transferencia eliminada correctamente!'}, status=status.HTTP_204_NO_CONTENT)
-
-#Factura
-@csrf_exempt
-@api_view(['GET', 'POST'])
-def getFactura(request):
-    if request.method == 'GET':
-        factura = Factura.objects.all()
-        factura_serializer = FacturaSerializer(factura, many=True)
-        return JsonResponse(factura_serializer.data, safe=False)
-    elif request.method == 'POST':
-        factura_data = JSONParser().parse(request)
-        factura_serializer = FacturaSerializer(data=factura_data)
-        if factura_serializer.is_valid():
-            factura_serializer.save()
-            return JsonResponse(factura_serializer.data, status=status.HTTP_201_CREATED)
-        return JsonResponse(factura_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-@csrf_exempt
-@api_view(['GET', 'PUT', 'DELETE'])
-def detalle_factura(request, id):
-    try:
-        factura = Factura.objects.get(numero_factura=id)
-    except Factura.DoesNotExist:
-        return JsonResponse({'message': 'La factura no existe'}, status=status.HTTP_404_NOT_FOUND)
-    if request.method == 'GET':
-        factura_serializer = FacturaSerializer(factura)
-        return JsonResponse(factura_serializer.data)
-    elif request.method == 'PUT':
-        factura_data = JSONParser().parse(request)
-        factura_serializer = FacturaSerializer(factura, data=factura_data)
-        if factura_serializer.is_valid():
-            factura_serializer.save()
-            return JsonResponse(factura_serializer.data)
-        return JsonResponse(factura_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE':
-        factura.delete()
-        return JsonResponse({'message': 'Factura eliminada correctamente!'}, status=status.HTTP_204_NO_CONTENT)
-
-#Detalle Factura
-@csrf_exempt
-@api_view(['GET', 'POST'])
-def getDetalleFactura(request):
-    if request.method == 'GET':
-        detalle = Detalle_Factura.objects.all()
-        detalle_serializer = Detalle_FacturaSerializer(detalle, many=True)
-        return JsonResponse(detalle_serializer.data, safe=False)
-    elif request.method == 'POST':
-        detalle_data = JSONParser().parse(request)
-        detalle_serializer = Detalle_FacturaSerializer(data=detalle_data)
-        if detalle_serializer.is_valid():
-            detalle_serializer.save()
-            return JsonResponse(detalle_serializer.data, status=status.HTTP_201_CREATED)
-        return JsonResponse(detalle_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@csrf_exempt
-@api_view(['GET', 'PUT', 'DELETE'])
-def detalle_detFactura(request, id):
-    try:
-        detalle = Detalle_Factura.objects.get(id_detalle_factura=id)
-    except Detalle_Factura.DoesNotExist:
-        return JsonResponse({'message': 'El detalle no existe'}, status=status.HTTP_404_NOT_FOUND)
-    if request.method == 'GET':
-        detalle_serializer = Detalle_FacturaSerializer(detalle)
-        return JsonResponse(detalle_serializer.data)
-    elif request.method == 'PUT':
-        detalle_data = JSONParser().parse(request)
-        detalle_serializer = Detalle_FacturaSerializer(detalle, data=detalle_data)
-        if detalle_serializer.is_valid():
-            detalle_serializer.save()
-            return JsonResponse(detalle_serializer.data)
-        return JsonResponse(detalle_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE':
-        detalle.delete()
-        return JsonResponse({'message': 'Detalle eliminado correctamente!'}, status=status.HTTP_204_NO_CONTENT)
-
-#Guia de despacho
-@csrf_exempt
-@api_view(['GET', 'POST'])
-def getGuiaDespacho(request):
-    if request.method == 'GET':
-        guia = Guiadedespacho.objects.all()
-        guia_serializer = guiadedespachoSerializer(guia, many=True)
-        return JsonResponse(guia_serializer.data, safe=False)
-    elif request.method == 'POST':
-        guia_data = JSONParser().parse(request)
-        guia_serializer = guiadedespachoSerializer(data=guia_data)
-        if guia_serializer.is_valid():
-            guia_serializer.save()
-            return JsonResponse(guia_serializer.data, status=status.HTTP_201_CREATED)
-        return JsonResponse(guia_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-@csrf_exempt
-@api_view(['GET', 'PUT', 'DELETE'])
-def detalle_guiadespacho(request, id):
-    try:
-        guia = Guiadedespacho.objects.get(codigo_guia=id)
-    except Guiadedespacho.DoesNotExist:
-        return JsonResponse({'message': 'La guia no existe'}, status=status.HTTP_404_NOT_FOUND)
-    if request.method == 'GET':
-        guia_serializer = guiadedespachoSerializer(guia)
-        return JsonResponse(guia_serializer.data)
-    elif request.method == 'PUT':
-        guia_data = JSONParser().parse(request)
-        guia_serializer = guiadedespachoSerializer(guia, data=guia_data)
-        if guia_serializer.is_valid():
-            guia_serializer.save()
-            return JsonResponse(guia_serializer.data)
-        return JsonResponse(guia_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE':
-        guia.delete()
-        return JsonResponse({'message': 'Guia eliminada correctamente!'}, status=status.HTTP_204_NO_CONTENT)
 
 #Soap Proveedor
 class ProveedorList(DjangoComplexModel):

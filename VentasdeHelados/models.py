@@ -1,7 +1,61 @@
+from typing import Tuple
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 
 # Create your models here.
+
+class UserManager(BaseUserManager):
+    def _create_user(self, username, correo_user, nom_user, ap_user, password, is_staff, is_superuser, rol, **extra_fields):
+        user = self.model(
+            username = username,
+            correo_user = self.normalize_email(correo_user),
+            nom_user = nom_user,
+            ap_user = ap_user,
+            is_staff = is_staff,
+            is_superuser = is_superuser,
+            rol = rol,
+            **extra_fields
+        )
+        user.set_password(password)
+        user.save(using = self.db)
+        return user
+    def create_superuser(self, username, correo_user, nom_user, ap_user, password=None, **extra_fields):
+        return self._create_user(username, correo_user, nom_user, ap_user, password, True, True, "admin", **extra_fields)
+    
+    def create_usercli(self, username, correo_user, nom_user, ap_user, password=None, **extra_fields):
+        return self._create_user(username, correo_user, nom_user, ap_user, password, False, False, "cliente", **extra_fields)
+    
+CHOICES_ROLES = [
+    ('admin', 'admin'),
+    ('cliente', 'cliente'),
+]
+
+class User(AbstractBaseUser, PermissionsMixin):
+    username = models.CharField(max_length=30, unique=True)
+    correo_user = models.EmailField("Correo",max_length=100, unique=True)
+    nom_user = models.CharField("Nombre", max_length=20, blank=True, null=True, default="(Sin Nombre)")
+    ap_user = models.CharField("Apellido", max_length=20, blank=True, null=True, default="(Sin Apellido)")
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    rol = models.CharField(max_length=30, choices=CHOICES_ROLES)
+    objects = UserManager()
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['correo_user', 'nom_user', 'ap_user']
+
+    def __str__(self) -> str:
+        return self.username
+        
+    def natural_key(self) -> Tuple[str]:
+        return (self.username,)
+
+class Cliente(models.Model):
+    rutcliente =  models.BigIntegerField(primary_key= True)
+    dv = models.CharField(max_length=1)
+    nombre_cli = models.CharField(max_length=25)
+    apellido_cli = models.CharField(max_length=25)
+    telefono = models.CharField(max_length=25)
+    direccion = models.CharField(max_length=40)
+    id_usuario = models.ForeignKey(User, on_delete=models.CASCADE)
 
 class Sabor (models.Model):
     id_sabor = models.BigIntegerField(primary_key=True)
@@ -29,15 +83,6 @@ class Proveedor (models.Model):
     nombre_pro = models.CharField(max_length=25)
     apellido_pro = models.CharField(max_length=25)
     direcion_pro = models.CharField(max_length=25)
-
-class Cliente(models.Model):
-    rutcliente =  models.BigIntegerField(primary_key= True)
-    dv = models.CharField(max_length=1)
-    nombre_cli = models.CharField(max_length=25)
-    apellido_cli = models.CharField(max_length=25)
-    telefono = models.CharField(max_length=25)
-    razon_social = models.CharField(max_length=25)
-    direccion = models.CharField(max_length=40)
 
 class Banco (models.Model):
     codigo_banco = models.BigIntegerField(primary_key= True)
@@ -134,7 +179,6 @@ class Compra (models.Model):
     estado = models.BooleanField(default=True)
     productos = models.JSONField()
     id_carrito = models.ForeignKey(Carrito, on_delete=models.CASCADE)
-    codigo_proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
 
 class Tranferencia (models.Model):
     codigo_transferencia = models.BigIntegerField(primary_key= True)
@@ -158,27 +202,33 @@ CHOICES_TIPORETIRO = [
 ]
 
 class Guiadedespacho (models.Model):
-    codigo_guia = models.BigIntegerField(primary_key= True)
-    fecha_guia = models.CharField(max_length=25)
+    codigo_guia = models.BigAutoField(primary_key= True)
+    fecha_guia = models.DateField(auto_now_add=True)
     condicion = models.CharField(max_length=25, choices=CHOICES_CONDICION)
     tipo_retiro = models.CharField(max_length=25, choices=CHOICES_TIPORETIRO)
     direccion = models.CharField(max_length=200)
-    num_departamento = models.PositiveSmallIntegerField(blank=True, null=True)
-    codigo_sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE)
-    codigo_comuna = models.ForeignKey(Comuna, on_delete=models.CASCADE)
-    id_compra = models.ForeignKey(Compra, on_delete=models.CASCADE)
-
-class Factura (models.Model):
-    numero_factura = models.BigIntegerField(primary_key= True)
     codigo_sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE)
     rut_trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE)
-    fecha_factura = models.CharField(max_length=25)
-    total = models.IntegerField()
 
-class Detalle_Factura (models.Model):
-    id_detalle_factura = models.BigIntegerField(primary_key= True)
+class Detalle_Guia(models.Model):
+    id_det_guia = models.BigAutoField(primary_key= True)
     codigo_producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    precio = models.IntegerField()
-    total = models.IntegerField()
-    cantidad_producto = models.IntegerField()
+    cantidad_producto = models.PositiveIntegerField()
+    codigo_guia = models.ForeignKey(Guiadedespacho, on_delete=models.CASCADE, related_name="productos")
+
+class Factura (models.Model):
+    numero_factura = models.BigAutoField(primary_key= True)
+    fecha_factura = models.DateField(auto_now_add=True)
+    productos = models.JSONField()
+    total = models.PositiveIntegerField()
+    total_productos = models.PositiveIntegerField()
+    rut_trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE)
+    codigo_proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
+
+class Pedido (models.Model):
+    id_pedido = models.BigAutoField(primary_key= True)
+    fecha_pedido = models.DateField(auto_now_add=True)
+    condicion = models.CharField(max_length=25, choices=CHOICES_CONDICION)
+    direccion_despacho = models.CharField(max_length=200)
+    rut_trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE)
     numero_factura = models.ForeignKey(Factura, on_delete=models.CASCADE)

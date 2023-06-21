@@ -1,8 +1,6 @@
 from rest_framework import serializers, status
 from .models import *
-from django.contrib.auth.models import User
 from django.http import Http404
-
 
 class SaborSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,11 +52,6 @@ class ProductoSerializer(serializers.ModelSerializer):
         model = Producto
         fields = ['codigo_producto','nom_producto','precio','stock','id_sabor','id_tamano','id_estado']
 
-class ClienteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Cliente
-        fields = ['rutcliente', 'dv','nombre_cli','apellido_cli','telefono','razon_social','direccion']
-
 class BancoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Banco
@@ -94,30 +87,122 @@ class TranferenciaSerializer(serializers.ModelSerializer):
         model = Tranferencia
         fields = ['codigo_transferencia','codigo_cuenta','codigo_sucursal','email','monto']
 
-class guiadedespachoSerializer(serializers.ModelSerializer):
+#Pedido
+class PedidoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pedido
+        fields = '__all__'
+
+class CrearPedidoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pedido
+        fields = ['direccion_despacho']
+
+class ActualizarPedidoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pedido
+        fields = ['condicion']
+
+    def update(self, instance, validated_data):
+        instance.condicion = validated_data.get('condicion', instance.condicion)
+        instance.save()
+        return instance
+
+#Despacho
+class ProductoDespachoSerializer(serializers.ModelSerializer):
+    # codigo_producto = serializers.StringRelatedField()
+    class Meta:
+        model = Detalle_Guia
+        fields = ['cantidad_producto','codigo_producto']
+
+class GuiadespachoSerializer(serializers.ModelSerializer):
+    productos = ProductoDespachoSerializer(many=True)
     class Meta:
         model = Guiadedespacho
-        fields = '__all__'
+        fields = ['direccion','codigo_sucursal','rut_trabajador','productos']
+
+    def create(self, validated_data):
+
+        productos_data = validated_data.pop('productos')
+            
+        guia = Guiadedespacho.objects.create(**validated_data)
+        for producto_data in productos_data:
+            Detalle_Guia.objects.create(
+                cantidad_producto=producto_data['cantidad_producto'],
+                codigo_producto=producto_data['codigo_producto'],
+                codigo_guia=guia
+            )
+        return guia
+    
+class ActualizarEstadoGuiaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Guiadedespacho
+        fields = ['condicion']
+
+    def update(self, instance, validated_data):
+        instance.condicion = validated_data.get('condicion', instance.condicion)
+        instance.save()
+        return instance
+    
+class GuiaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Guiadedespacho
+        fields = ['fecha_guia','condicion','direccion','productos','codigo_sucursal','rut_trabajador']
+
+#Factura
+class ProductosFacturaSerializer(serializers.ModelSerializer):
+    cantidad = serializers.IntegerField()
+    nom_producto = serializers.CharField(validators=[])
+    class Meta:
+        model = Producto
+        fields = ['nom_producto','cantidad']
 
 class FacturaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Factura
-        fields = ['numero_factura','fecha_factura','rut_trabajador','codigo_sucursal','total']
+        fields = ['fecha_factura','productos','total','codigo_proveedor','rut_trabajador']
 
-class Detalle_FacturaSerializer(serializers.ModelSerializer):
+class CrearFacturaSerializer(serializers.ModelSerializer):
+    pedido = CrearPedidoSerializer(many=False)
+    productos = ProductosFacturaSerializer(many=True)
     class Meta:
-        model = Detalle_Factura
-        fields = ['id_detalle_factura','cantidad_producto','precio','codigo_producto','numero_factura','total']
+        model = Factura
+        fields = ['productos','total', 'total_productos','rut_trabajador','codigo_proveedor','pedido']
+    def validate(self, attrs):
+        if attrs.get('productos') == []:
+            raise serializers.ValidationError("La Factra no puede estar vacia")
+        return attrs
+    def create(self, validated_data):
+        direccion = validated_data['pedido']
+        factura = Factura.objects.create(**validated_data)
+        Pedido.objects.create(
+            direccion_despacho=direccion.get('direccion_despacho'),
+            numero_factura=factura,
+            rut_trabajador= validated_data['rut_trabajador']
+        )
+        return factura
+
+#Usuario
+class ClienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cliente
+        fields = '__all__'
+
+    def create(self, validated_data):
+
+        cliente = Cliente.objects.create(**validated_data)
+
+        return cliente
 
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
             "id",
-            "first_name",
-            "last_name",
+            "nom_user",
+            "ap_user",
             "username",
-            "email",
+            "correo_user",
             "password",
             "is_active",
             "is_staff",
@@ -125,7 +210,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
         extra_kwargs = {"password": {"write_only": True, "min_length": 8}}
 
     def create(self, validated_data):
-        usuario = User.objects.create_user(**validated_data)
+        usuario = User.objects.create_usercli(**validated_data)
         return usuario
 
 #Carrito
