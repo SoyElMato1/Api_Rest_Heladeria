@@ -33,7 +33,7 @@ def getsabor(request):
         sabores_serializer = SaborSerializer(data=sabores_data)
         if sabores_serializer.is_valid():
             sabores_serializer.save()
-            return JsonResponse(sabores_serializer.data,{"message": "Sabor agregado"}, status=status.HTTP_201_CREATED) 
+            return JsonResponse(sabores_serializer.data, status=status.HTTP_201_CREATED) 
         return JsonResponse(sabores_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
@@ -66,7 +66,7 @@ def gettamano(request):
         tamanos_serializer = TamanoSerializer(data=tamanos_data)
         if tamanos_serializer.is_valid():
             tamanos_serializer.save()
-            return JsonResponse(tamanos_serializer.data,{"message": "Tamaño agregado"}, status=status.HTTP_201_CREATED) 
+            return JsonResponse(tamanos_serializer.data, status=status.HTTP_201_CREATED) 
         return JsonResponse(tamanos_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
@@ -106,7 +106,7 @@ def getestadoproducto(request):
         estados_serializer = EstadoProductoSerializer(data=estados_data)
         if estados_serializer.is_valid():
             estados_serializer.save()
-            return JsonResponse(estados_serializer.data,{"message": "Estado del producto agregado"}, status=status.HTTP_201_CREATED) 
+            return JsonResponse(estados_serializer.data, status=status.HTTP_201_CREATED) 
         return JsonResponse(estados_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @csrf_exempt
@@ -133,6 +133,33 @@ def detalle_estadoproducto(request, id):
         estado.delete() 
         return JsonResponse({'message': 'Estado de producto eliminado correctamente!'}, status=status.HTTP_204_NO_CONTENT)
 
+#Oferta
+@csrf_exempt
+@api_view(['GET', 'POST'])
+def getoferta(request):
+    if request.method == 'GET':
+        ofertas = Oferta.objects.all()
+        ofertas_serializer = OfertaSerializer(ofertas, many=True)
+        return JsonResponse(ofertas_serializer.data, safe=False)
+    elif request.method == 'POST':
+        ofertas_data = JSONParser().parse(request)
+        ofertas_serializer = OfertaSerializer(data=ofertas_data)
+        if ofertas_serializer.is_valid():
+            ofertas_serializer.save()
+            return Response({"message": "Oferta agregada"}, status=status.HTTP_201_CREATED) 
+        return Response(ofertas_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@csrf_exempt
+@api_view(['GET'])
+def detalle_oferta(request, id):
+    try: 
+        oferta = Oferta.objects.get(codigo_oferta=id) 
+    except Oferta.DoesNotExist: 
+        return JsonResponse({'message': 'La oferta no existe'}, status=status.HTTP_404_NOT_FOUND) 
+    if request.method == 'GET': 
+        oferta_serializer = OfertaSerializer(oferta) 
+        return JsonResponse({"data": oferta_serializer.data})
+
 #Producto
 @csrf_exempt
 @api_view(['GET', 'POST'])
@@ -143,10 +170,10 @@ def getProducto(request):
         return JsonResponse(producto_serializer.data, safe=False)
     elif request.method == 'POST':
         producto_data = JSONParser().parse(request)
-        producto_serializer = ProductoSerializer(data=producto_data)
+        producto_serializer = CrearProductoSerializer(data=producto_data)
         if producto_serializer.is_valid():
             producto_serializer.save()
-            return JsonResponse(producto_serializer.data,{"message": "Producto agregado"}, status=status.HTTP_201_CREATED)
+            return JsonResponse(producto_serializer.data, status=status.HTTP_201_CREATED)
         return JsonResponse(producto_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
@@ -183,7 +210,7 @@ def getproveedor(request):
         proveedores_serializer = ProveedorSerializer(data=proveedores_data)
         if proveedores_serializer.is_valid():
             proveedores_serializer.save()
-            return JsonResponse(proveedores_serializer.data,{"message": "Proveedor agregado"}, status=status.HTTP_201_CREATED) 
+            return JsonResponse(proveedores_serializer.data, status=status.HTTP_201_CREATED) 
         return JsonResponse(proveedores_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
@@ -223,7 +250,7 @@ def getCliente(request):
         cliente_serializer = ClienteSerializer(data=cliente_data)
         if cliente_serializer.is_valid():
             cliente_serializer.save()
-            return JsonResponse(cliente_serializer.data,{"message": "Cliente agregado"}, status=status.HTTP_201_CREATED)
+            return JsonResponse(cliente_serializer.data, status=status.HTTP_201_CREATED)
         return JsonResponse(cliente_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 #Banco

@@ -36,6 +36,8 @@ urlpatterns = [
     #Producto
     path('getproducto/', getProducto, name='productos'),
     path('det_producto/<id>', detalle_producto, name='detalle_productos'),
+    path('getoferta/', getoferta, name='crear_productos'),
+    path('getoferta/<id>', detalle_oferta, name='detalle_ofertas'),
     #Banco
     path('getbanco/', getBanco, name='bancos'),
     path('det_banco/<id>', detalle_banco, name='detalle_bancos'),

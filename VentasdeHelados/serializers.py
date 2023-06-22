@@ -46,11 +46,31 @@ class SucursalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sucursal
         fields = ['codigo_sucursal','rut_sucursal','nombre_sucursal','direccion_sucursal','capacidad','cantidad_producto','codigo_producto','codigo_comuna']
+#Oferta
+class CrearProductoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Producto
+        fields = ['codigo_producto','nom_producto','precio','stock','id_sabor','id_tamano','id_estado','codigo_oferta']
 
 class ProductoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Producto
-        fields = ['codigo_producto','nom_producto','precio','stock','id_sabor','id_tamano','id_estado']
+        fields = '__all__'
+
+    precio = serializers.SerializerMethodField(method_name='precio_descuento')
+
+    def precio_descuento(self, producto: Producto):
+        if producto.codigo_oferta is not None:
+            dis_decimal = producto.codigo_oferta.descuento / 100
+            price_discount = producto.precio * dis_decimal
+            precio_final = producto.precio - price_discount
+            return precio_final
+        return producto.precio
+
+class OfertaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Oferta
+        fields = ["codigo_oferta","nombre_oferta","estado","fecha_inicio","fecha_termino","descuento"]
 
 class BancoSerializer(serializers.ModelSerializer):
     class Meta:

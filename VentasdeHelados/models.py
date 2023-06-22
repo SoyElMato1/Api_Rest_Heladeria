@@ -69,6 +69,14 @@ class Estado_Producto (models.Model):
     id_estado = models.BigIntegerField(primary_key=True)
     tipo_estado = models.CharField(max_length=30)
 
+class Oferta (models.Model):
+    codigo_oferta = models.BigIntegerField(primary_key=True)
+    nombre_oferta = models.CharField(max_length=25)
+    estado = models.BooleanField()
+    descuento = models.PositiveSmallIntegerField()
+    fecha_inicio = models.DateField(auto_now_add=True)
+    fecha_termino = models.DateField()
+
 class Producto (models.Model):
     codigo_producto = models.BigIntegerField(primary_key=True)
     nom_producto =models.CharField(max_length=25)
@@ -77,6 +85,7 @@ class Producto (models.Model):
     id_sabor = models.ForeignKey(Sabor, on_delete=models.CASCADE)
     id_tamano = models.ForeignKey(Tamano, on_delete=models.CASCADE)
     id_estado = models.ForeignKey(Estado_Producto, on_delete=models.CASCADE)
+    codigo_oferta = models.ForeignKey(Oferta, on_delete=models.CASCADE, null=True, blank=True)
 
 class Proveedor (models.Model):
     codigo_proveedor = models.BigIntegerField(primary_key=True)
