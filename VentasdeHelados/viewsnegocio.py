@@ -88,7 +88,7 @@ def eliminar_carritoitem(request):
         carritoitem_serializer = RestarCarritoSerializer(data=carritoitem_data)
         if carritoitem_serializer.is_valid():
             carritoitem_serializer.save()
-            return JsonResponse({"data": carritoitem_serializer.data, "message": "Producto eliminado del carrito"}, status=status.HTTP_200_OK)
+            return JsonResponse({"data": carritoitem_serializer.data, "message": "Se elimino una unidad del producto seleccionado"}, status=status.HTTP_200_OK)
         return JsonResponse(carritoitem_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
@@ -100,7 +100,7 @@ def ListarCompras(request):
         try:
             compras = Compra.objects.all()
         except Compra.DoesNotExist:
-            return JsonResponse({"data": "null", "message": "No existe el carrito"}, status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse({"data": "null", "message": "No existen compras"}, status=status.HTTP_404_NOT_FOUND)
 
         compras_serializer = CompraSerializer(compras, many=True)
         return JsonResponse({"data": compras_serializer.data, "message": "Compras encontradas"}, status=status.HTTP_200_OK)
@@ -236,41 +236,43 @@ def listarpedidofactura(request, id:int):
             return Response({"messege": "No hay pedidos registrados con esta factura"}, status.HTTP_204_NO_CONTENT)
         return Response({"status": "ok","Bodeguero": serializer.data}, status.HTTP_200_OK)
 
-@csrf_exempt
-@api_view(['GET','PUT'])
-def ActualizarEstadoPedido(request, id:int):
-    if request.method == 'GET':
+class ActualizarEstadoPedido(generics.UpdateAPIView):
+    serializer_class = ActualizarPedidoSerializer
+    def get_object(self, id:int):
         try:
-            pedido = Pedido.objects.get(id_pedido=id)
-        except pedido.DoesNotExist:
-            return JsonResponse({'message': 'Pedido no existe'}, status=status.HTTP_404_NOT_FOUND)
-    elif request.method == 'PUT':
-        pedido_data = JSONParser().parse(request)
-        if pedido_data is None :
-            return Response({
-                "messege": "No hay datos para actualizar"
-                }, status=status.HTTP_404_NOT_FOUND)
+            pedido = Pedido.objects.get(id_pedido = id)
+        except Pedido.DoesNotExist:
+            return None
+        return pedido
+    def put(self, request, id:int, format=None):
+        pedido = self.get_object(id)
+        if pedido is None:
+            return Response(
+                {
+                    "status": "Not Found", 
+                    "message": "Pedido no Encontrado"
+                    }, status=status.HTTP_404_NOT_FOUND)
         try:
-            request.data['condicion']
+            request.data["condicion"]
         except KeyError:
-            return Response({
-                "status": "Bad request","errors": {
-                    "condicion": [
-                        "Este campo es requerido."
-                    ]
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
-        pedido_serializer = ActualizarPedidoSerializer(pedido, data=pedido_data)
-        if not pedido_serializer.is_valid():
-            return Response({
-                "status": "Bad request",
-                "errors": pedido_serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-        pedido_serializer.save()
-        return Response({
-            "status": "Actualizado",
-            "message": "Pedido actualizado con exito"
-        }, status=status.HTTP_200_OK)
+            return Response({"status": "Bad Request","errors": {
+                "condicion": [
+                    "Es te campo es requerido"
+                ]
+            }}, status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(pedido, data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "status": "Bad Request", 
+                    "errors": serializer.errors
+                    }, status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(
+            {
+                "status": "Update", 
+                "message": "La condicion del pedido a sido actualizado con exito"
+                }, status.HTTP_200_OK)
 
 # ---------------------- METODO DE Factura ----------------------------------------------
 @csrf_exempt

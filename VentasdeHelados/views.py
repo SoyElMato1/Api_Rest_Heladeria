@@ -2,9 +2,6 @@ from django.http import JsonResponse
 from .models import *
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
-# from rest_framework.decorators import permission_classes, authentication_classes
-# from rest_framework.permissions import IsAuthenticated
-# from rest_framework.authentication import TokenAuthentication
 from .serializers import *
 from rest_framework import status
 from rest_framework.parsers import JSONParser
@@ -36,7 +33,7 @@ def getsabor(request):
         sabores_serializer = SaborSerializer(data=sabores_data)
         if sabores_serializer.is_valid():
             sabores_serializer.save()
-            return JsonResponse(sabores_serializer.data, status=status.HTTP_201_CREATED) 
+            return JsonResponse(sabores_serializer.data,{"message": "Sabor agregado"}, status=status.HTTP_201_CREATED) 
         return JsonResponse(sabores_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
@@ -69,7 +66,7 @@ def gettamano(request):
         tamanos_serializer = TamanoSerializer(data=tamanos_data)
         if tamanos_serializer.is_valid():
             tamanos_serializer.save()
-            return JsonResponse(tamanos_serializer.data, status=status.HTTP_201_CREATED) 
+            return JsonResponse(tamanos_serializer.data,{"message": "Tamaño agregado"}, status=status.HTTP_201_CREATED) 
         return JsonResponse(tamanos_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
@@ -109,7 +106,7 @@ def getestadoproducto(request):
         estados_serializer = EstadoProductoSerializer(data=estados_data)
         if estados_serializer.is_valid():
             estados_serializer.save()
-            return JsonResponse(estados_serializer.data, status=status.HTTP_201_CREATED) 
+            return JsonResponse(estados_serializer.data,{"message": "Estado del producto agregado"}, status=status.HTTP_201_CREATED) 
         return JsonResponse(estados_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @csrf_exempt
@@ -149,7 +146,7 @@ def getProducto(request):
         producto_serializer = ProductoSerializer(data=producto_data)
         if producto_serializer.is_valid():
             producto_serializer.save()
-            return JsonResponse(producto_serializer.data, status=status.HTTP_201_CREATED)
+            return JsonResponse(producto_serializer.data,{"message": "Producto agregado"}, status=status.HTTP_201_CREATED)
         return JsonResponse(producto_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
@@ -186,7 +183,7 @@ def getproveedor(request):
         proveedores_serializer = ProveedorSerializer(data=proveedores_data)
         if proveedores_serializer.is_valid():
             proveedores_serializer.save()
-            return JsonResponse(proveedores_serializer.data, status=status.HTTP_201_CREATED) 
+            return JsonResponse(proveedores_serializer.data,{"message": "Proveedor agregado"}, status=status.HTTP_201_CREATED) 
         return JsonResponse(proveedores_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
@@ -226,29 +223,8 @@ def getCliente(request):
         cliente_serializer = ClienteSerializer(data=cliente_data)
         if cliente_serializer.is_valid():
             cliente_serializer.save()
-            return JsonResponse(cliente_serializer.data, status=status.HTTP_201_CREATED)
+            return JsonResponse(cliente_serializer.data,{"message": "Cliente agregado"}, status=status.HTTP_201_CREATED)
         return JsonResponse(cliente_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-@csrf_exempt
-@api_view(['GET', 'PUT', 'DELETE'])
-def detalle_cliente(request, id):
-    try:
-        cliente = Cliente.objects.get(rutcliente=id)
-    except Cliente.DoesNotExist:
-        return JsonResponse({'message': 'El cliente no existe'}, status=status.HTTP_404_NOT_FOUND)
-    if request.method == 'GET':
-        cliente_serializer = ClienteSerializer(cliente)
-        return JsonResponse(cliente_serializer.data)
-    elif request.method == 'PUT':
-        cliente_data = JSONParser().parse(request)
-        cliente_serializer = ClienteSerializer(cliente, data=cliente_data)
-        if cliente_serializer.is_valid():
-            cliente_serializer.save()
-            return JsonResponse(cliente_serializer.data)
-        return JsonResponse(cliente_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE':
-        cliente.delete()
-        return JsonResponse({'message': 'Cliente eliminado correctamente!'}, status=status.HTTP_204_NO_CONTENT)
 
 #Banco
 @csrf_exempt

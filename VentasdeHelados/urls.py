@@ -36,9 +36,6 @@ urlpatterns = [
     #Producto
     path('getproducto/', getProducto, name='productos'),
     path('det_producto/<id>', detalle_producto, name='detalle_productos'),
-    #Cliente
-    path('getcliente/', getCliente, name='clientes'),
-    path('det_cliente/<id>', detalle_cliente, name='detalle_clientes'),
     #Banco
     path('getbanco/', getBanco, name='bancos'),
     path('det_banco/<id>', detalle_banco, name='detalle_bancos'),
@@ -59,6 +56,7 @@ urlpatterns = [
     path('det_dettrans/<id>', detalleTransferencia, name='detalle_transferencias'),
     #Usuario
     path('getusuario/', registro_usuario, name='usuarios'),
+    path('getcliente/', getCliente, name='clientes'),
     #Carrito
     # path('create/', CrearCarritoView.as_view(), name='carrito'),
     path('user/<int:id>', listar_carrito, name='carrito_usuario'),
@@ -75,7 +73,7 @@ urlpatterns = [
     #Pedido
     path('getpedido/', listarPedido, name='pedidos'),
     path('pefa/<int:id>',listarpedidofactura, name='factura_pedido'),
-    path('update/<int:id>', ActualizarEstadoPedido, name='actualizar_pedido'),
+    path('estped/<int:id>',ActualizarEstadoPedido.as_view(), name='guia_pedido'),
     #factura
     path('getfactura/', listarFactura, name='facturas'),
     path('proveedor/<int:id>', listarFacturaProveedor, name='detalle_facturas'),

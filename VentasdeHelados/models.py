@@ -204,7 +204,7 @@ CHOICES_TIPORETIRO = [
 class Guiadedespacho (models.Model):
     codigo_guia = models.BigAutoField(primary_key= True)
     fecha_guia = models.DateField(auto_now_add=True)
-    condicion = models.CharField(max_length=25, choices=CHOICES_CONDICION)
+    condicion = models.CharField(max_length=25, choices=CHOICES_CONDICION, default="en preparacion")
     tipo_retiro = models.CharField(max_length=25, choices=CHOICES_TIPORETIRO)
     direccion = models.CharField(max_length=200)
     codigo_sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE)
@@ -225,10 +225,19 @@ class Factura (models.Model):
     rut_trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE)
     codigo_proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
 
+CHOICES_PEDIDO = [
+    ("cancelado", "cancelado"),
+    ("en retraso", "en retraso"),
+    ("en preparacion", "en preparacion"),
+    ("en reparto", "en reparto"),
+    ("en camino", "en camino"),
+    ("entregado", "entregado")
+]
+
 class Pedido (models.Model):
     id_pedido = models.BigAutoField(primary_key= True)
     fecha_pedido = models.DateField(auto_now_add=True)
-    condicion = models.CharField(max_length=25, choices=CHOICES_CONDICION)
+    condicion = models.CharField(max_length=25, choices=CHOICES_PEDIDO, default="en preparacion")
     direccion_despacho = models.CharField(max_length=200)
     rut_trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE)
     numero_factura = models.ForeignKey(Factura, on_delete=models.CASCADE)
