@@ -12,7 +12,10 @@ from rest_framework.parsers import JSONParser
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.hashers import check_password
 from rest_framework.authtoken.models import Token
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.sessions.models import Session
+import requests
+from datetime import datetime
 
 # ---------------------- METODO LOGIN ----------------------------------------------
 @csrf_exempt
@@ -49,6 +52,45 @@ def registro_usuario(request):
             usuario_serializer.save()
             return JsonResponse({"data": usuario_serializer.data, "message": "Usuario creado" }, status=status.HTTP_201_CREATED)
         return JsonResponse(usuario_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@csrf_exempt
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([TokenAuthentication])
+def logout(request):
+    if request.method == 'GET':
+        try:
+            tokenUrl = request.GET.get('token')
+            token = Token.objects.filter(key=tokenUrl).first()
+            if token:
+                usuario = token.user
+                sessions = Session.objects.filter(expire_date__gte= datetime.now())
+                if sessions.exists():
+                    for session in sessions:
+                        session_data = session.get_decoded()
+                        if usuario.id == int(session_data.get('_auth_user_id')):
+                            session.delete()
+                token.delete()
+                logout(request= request)
+                mensaje_session = "Sesión cerrada"
+                mensaje_token = "Token eliminado"
+
+                message = {
+                    'session': mensaje_session,
+                    'token': mensaje_token
+                }
+                return Response({
+                    'status': 'OK',
+                    'message': 'Sesión cerrada correctamente',
+                    'messages': message
+                }, status=status.HTTP_200_OK)
+            return Response({
+                'status': 'ERROR',
+                'message': 'No existe ningun usuario con esas credenciales'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        except:
+            return JsonResponse({"errirs": "Error al cerrar sesión"}, status=status.HTTP_409_CONFLICT)
 
 # ---------------------- METODO DE CARRITO ----------------------------------------------
 @csrf_exempt
@@ -359,3 +401,62 @@ def ActualizarEstadoGuia(request, id:int):
             "data": guia_serializer.data,
             "message": "Guia actualizada con exito"
         }, status=status.HTTP_200_OK)
+    
+# ---------------------- METODO DE Transbank ----------------------------------------------
+def header_request_transbank():
+    headers = {
+                "Authorization": "Token",
+                "Tbk-Api-Key-Id": "597055555532",
+                "Tbk-Api-Key-Secret": "579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C",
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                'Referrer-Policy': 'origin-when-cross-origin',
+                } 
+    return headers
+
+@csrf_exempt
+@api_view(['POST'])
+def crearTransbank(request):
+    if request.method == 'POST':
+        trans = JSONParser().parse(request)
+        trans_serializer = CrearTransbank(data = trans)
+        if trans_serializer.is_valid():
+            url = "https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.2/transactions"
+            headers = header_request_transbank()
+            response = requests.post(url, json = trans.data, headers=headers)
+            response_json = response.json()
+            return Response({'message':'Transbank creado exitosamente', 'data': response_json }, status=status.HTTP_200_OK)
+        return Response(trans.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class crearTransbank(generics.CreateAPIView):
+    serializer_class = CrearTransbank
+    def post(self, request):
+        trans = self.get_serializer(data=request.data)
+        if trans.is_valid():
+            url = "https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.2/transactions"
+            headers = header_request_transbank()
+            response = requests.post(url, json = trans.data, headers=headers)
+            response_json = response.json()
+            return Response({'message':'Transbank creado exitosamente', 'data': response_json }, status=status.HTTP_200_OK)
+        return Response(trans.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class confirmarTransbank(generics.CreateAPIView):
+    def get(self,request, token:str):
+        headers = header_request_transbank()
+        url = f"https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.2/transactions/{token}"
+        response = requests.put(url, headers=headers)
+        response_json = response.json()
+        return Response({'message':'Transbank confirmado exitosamente', 'data': response_json }, status=status.HTTP_200_OK)
+    
+class anularTransbank(generics.CreateAPIView):
+    serializer_class = anularTransbank
+    def post(self, request,token:str):
+        trans = self.get_serializer(data=request.data)
+        if trans.is_valid():
+            url = f"https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.2/transactions/{token}"
+            headers = header_request_transbank()
+            response = requests.post(url, json = trans.data, headers=headers)
+            response_json = response.json()
+            return Response({'message':'Transbank anulado exitosamente', 'data': response_json }, status=status.HTTP_200_OK)
+        return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)

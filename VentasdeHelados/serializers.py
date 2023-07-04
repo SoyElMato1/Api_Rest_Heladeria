@@ -362,4 +362,13 @@ class CrearStockBodegaSerializer(serializers.ModelSerializer):
                 self.instance = DetalleBodega.objects.create(**self.validated_data)
                 return self.instance
             raise serializers.ValidationError({"status": "Conflict", "message": "La capacidad ocupa de la bodega supera a la capacidad maxima de la bodega"}, status.HTTP_409_CONFLICT)
+#Transbank
+class CrearTransbank(serializers.Serializer):
+    amount = serializers.IntegerField()
+    session_id = serializers.CharField()
+    buy_order = serializers.CharField()
+    return_url = serializers.CharField()
+
+class anularTransbank(serializers.Serializer):
+    amount = serializers.IntegerField()
 

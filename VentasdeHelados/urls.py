@@ -86,4 +86,9 @@ urlpatterns = [
     path('guiasucu/<int:id>', listarGuiaSucursal, name='detalle_guias'),
     #Login
     path('login/', login, name='login'),
+    path('logout/', logout, name='logout'),
+    #Transbank
+    path('transcreated/', crearTransbank.as_view(), name='transbank'),
+    path('transconfir/<str:token>', confirmarTransbank.as_view(), name='confirmar_transbank'),
+    path('transcancel/<str:token>', anularTransbank.as_view(), name='cancelar_transbank'),
 ]
